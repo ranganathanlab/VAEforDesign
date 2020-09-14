@@ -221,9 +221,9 @@ if __name__ =='__main__':
             for item in alp_new_seq[:-1]:
                 f.write(">gi\n")
                 f.write("%s\n" % item)
-        os.system('../pySCA/pysca/scaProcessMSA.py output/' + filename +'.fasta -s 2VKN -c A -o 0')
-        os.system('../pySCA/pysca/scaCore.py output/' + filename +'.db')
-        os.system('../pySCA/pysca/scaSectorID.py output/' + filename +'.db')
+        os.system('scaProcessMSA output/' + filename +'.fasta -s 2VKN -c A -o 0')
+        os.system('scaCore output/' + filename +'.db')
+        os.system('scaSectorID output/' + filename +'.db')
         
         if os.path.isfile(path + filename +'.db'):
             os.remove(path + filename +'.db')
