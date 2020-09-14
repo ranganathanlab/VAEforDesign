@@ -14,7 +14,6 @@ This repository includes a complete pipeline from preprocessing the MSA data to 
 | Inputs/      | Input data, including the MSA (*.fasta*) and the SCA reference (*.pdb*).    |
 | Outputs/    | Output files  |
 | sources/      | The VAE codes (explained in the appendix)                |
-| pySCA/     | The [pySCA module](https://github.com/ranganathanlab/pySCA)|
 | VAE_SH3.ipynb | The VAE tutorial for SH3         |
 | runsca_SH3.sh | The shell script to run SCA for MSA |
 
@@ -25,33 +24,29 @@ To clone this VAE repository together with the SCA submodule, go to your destina
   
 ```shell
 git clone https://github.com/andrewlferguson/protein-design-VAE.git  
-cd protein-design-VAE/SH3_v1_1  
-git clone https://github.com/ranganathanlab/pySCA.git  
 ```  
 
 ## 2. Set up environment and dependencies
 We recommand you to set up the working environment in the following steps:  
-* Installed the newest version of required python packages: **numpy, pandas, numba, scipy, matplotlib, torch, sklearn, Bio**:  
+* Installed the newest version of required python packages: **numpy, pandas, numba, scipy, matplotlib, torch, sklearn, Bio, pySCA**:  
   I. It is recommended to install torch according to [the official instruction](https://pytorch.org).  
   II. For the other packages, [Conda environment](https://www.anaconda.com) will be helpful. After installing conda, you can install the packages by running the command below in the terminal:    
   ```shell
   conda install numpy pandas numba scipy matplotlib sklearn Bio
-  ```
-  
-* Install [Julia](https://julialang.org) and [plmDCA](https://github.com/pagnani/PlmDCA). plmDCA is a critical package for evaluation of the generated sequences.  
+  ``` 
   
 * Install pySCA dependencies according to [this instruction](https://ranganathanlab.gitlab.io/pySCA/install/).  
   **Note**: pySCA is a seperate module from VAE. It is highly recommended though not critical to have it installed. Without the dependencies you will not be able to add `-a` argument when generating new sequences(see below), and error will occur while running sections related to SCA in the tutorial.  
 
 ## 3. Usage
-For SH3, we prepared the input *.fasta* file (*Inputs/530x129_SH3_orderedprocessed.fasta*) and reference *.pdb* structure of Sho3 (*2VKN.pdb*).  
+For SH3, we prepared the input *.fasta* file (*Inputs/sh3_59.fasta*) and reference *.pdb* structure of Sho1 (*2VKN.pdb*).  
 To execute the VAE pipeline, follow the instructions at the beginning of the jupyter notebook tutorial [VAE_SH3.ipynb](VAE_SH3.ipynb).  
 Briefly, run the following commands sequentially in this directory:  
 ```shell
 cd source  
-./preprocessing.py ../Inputs/530x129_SH3_orderedprocessed.fasta -n SH3  
+./preprocessing.py ../Inputs/sh3_59.fasta -n SH3  
 ./train_model.py -n SH3
-./Generate_many_seqs.py -g 50000 -n SH3
+./Generate_many_seqs.py -g 1000 -n SH3
 ```  
 Additionally, then run the following two commands if you want to evaluate the model with SCA. 
 ```shell
