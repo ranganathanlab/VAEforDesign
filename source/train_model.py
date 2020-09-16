@@ -259,5 +259,5 @@ if __name__ =='__main__':
     print("Elapsed time %.2f (s)" % (end - start))
 
     # saving trained model
-    save_path = "./VAE.pyt"
+    save_path = "./VAE_"+options.name+".pyt"
     torch.save(model.state_dict(), save_path)

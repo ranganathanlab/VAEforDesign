@@ -1,5 +1,6 @@
-scaProcessMSA Inputs/sh3_59.fasta -s 2VKN -c A -o 321
-scaCore Outputs/sh3_59a.db
-scaSectorID Outputs/sh3_59.db
+scaProcessMSA -a Inputs/sh3_59.fasta -s source/data/2VKN -c A -p 0.3 0.2 0.2 0.8
+scaCore -i output/sh3_59.db
+scaSectorID -i output/sh3_59.db
 
-mv Outputs/sh3_59.db Inputs
+mv output/sh3_59.db Inputs
+rm -r output
