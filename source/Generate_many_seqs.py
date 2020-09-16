@@ -172,7 +172,7 @@ if __name__ =='__main__':
     # load VAE
     d=3
     model = VAE(q,d)
-    model.load_state_dict(torch.load('VAE.pyt',map_location='cpu'))
+    model.load_state_dict(torch.load('VAE_SH3.pyt',map_location='cpu'))
     model.eval()
         
     # Generate new sequences
