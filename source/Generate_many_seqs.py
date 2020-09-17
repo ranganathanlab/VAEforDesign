@@ -216,14 +216,18 @@ if __name__ =='__main__':
         if os.path.isdir('output')==0:
             os.mkdir('output')
         with open('output/' + filename+'.fasta', 'w') as f:
+            
+            # write the reference sequence
             f.write(">2vkn_chainA_p001\n")
             f.write("NFIYKAKALYPYDADDAYEISFEQNEILQVSDIEGRWWKARRNGETGIIPSNYVQLIDG\n") #2vkn_chainA_p001
+            
             for item in alp_new_seq[:-1]:
                 f.write(">gi\n")
                 f.write("%s\n" % item)
-        os.system('scaProcessMSA output/' + filename +'.fasta -s 2VKN -c A -o 0')
-        os.system('scaCore output/' + filename +'.db')
-        os.system('scaSectorID output/' + filename +'.db')
+        os.system('scaProcessMSA -a output/' + filename +'.fasta -b data -s 2VKN -c A -p 0.3 0.2 0.2 0.8')
+        # Note: the above line should be customes based on the protein family you chose
+        os.system('scaCore -i output/' + filename +'.db')
+        os.system('scaSectorID -i output/' + filename +'.db')
         
         if os.path.isfile(path + filename +'.db'):
             os.remove(path + filename +'.db')
