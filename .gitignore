@@ -1,4 +1,6 @@
 *.db
+*.npz
+*.npy
 *.DS_Store
 
 __pycache__/
