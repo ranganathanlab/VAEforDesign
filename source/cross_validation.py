@@ -220,7 +220,6 @@ else:
 print("Using device = %s" % device)
 
 # fix random seed for reproducibility
-np.random.seed(200186)
 torch.manual_seed(200186)
 if torch.cuda.is_available():
     torch.cuda.manual_seed_all(200186)
