@@ -4,8 +4,8 @@
 >
 > Copyright (C) 2019 Xinran Lian, Andrew Ferguson, Rama Ranganathan
 >
-  
-## The README.md is old and not up-to date yet. For now, please refer to instructions in VAE_SH3.ipynb.
+
+## Please refer to instructions in VAE_SH3.ipynb.
 
 Protein design variational autoencoder (VAE) is an approach for designing new proteins from primary sequential structure and evolutionary constrains based on deep learning. Feeded by neural network with natural sequences (namely multiple sequence alignment, MSA), the VAE encodes the high-dimensional sequence data into low-dimensional latent space, then decodes the sample points from the latent space to construct new sequences.   
   
