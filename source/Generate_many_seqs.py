@@ -4,39 +4,19 @@
 import sys
 import numpy as np
 import os
-from numba import jit
 import argparse
 import pickle
 import multiprocessing as mp
 import time
-import toolkit
 import shutil
+from itertools import repeat
 
+import toolkit
 from model import *
-from torch.multiprocessing import Pool, Process, set_start_method
-from sklearn.model_selection import train_test_split
-from torch.autograd import Variable
 
 from Bio import SeqIO
 from Bio import AlignIO
-
-
-def generate(seed, n, n_gen, n_samp):
-    np.random.seed(seed)
-    z_gen = np.random.normal(0., 1., (n_gen, d)) #generate normal distribution of random numbers
-    data = torch.FloatTensor(z_gen).to(device)
-    data = model.decode(data) # Use the decoding layer to generate new sequences.
-    v_gen = data.cpu().detach().numpy()
-    sample_list = []
-
-    for i in range(n_gen):
-        for k in range(n_samp):
-            v_samp_nothot = toolkit.sample_seq(seed+k, q, n, q_n, i, v_gen)
-            sample_list.append([v_samp_nothot,z_gen[i]])
-    return sample_list
-
-def run_gen(s): # for parallelization
-    return generate(s, n, int(n_gen/10), n_sample)
+    
     
 if __name__ =='__main__':
     parser = argparse.ArgumentParser(description='Hint: In total ngen*nsamp new sequences are generated, default 1000. Then they are filtered according to thresholds of minimum Hamming distance.')
@@ -62,7 +42,7 @@ if __name__ =='__main__':
     device = torch.device("cpu")
     torch.manual_seed(20)
 
-    # Load data
+    print('Loading data...')
     path = '../Outputs/'
     parameters = pickle.load(open(path + options.name + ".db", 'rb'))
     q_n = parameters['q_n']
@@ -74,9 +54,9 @@ if __name__ =='__main__':
     q=np.size(v_traj_onehot,axis=1)
     n=np.size(q_n)
     
-    # load VAE
+    print('Loading VAE...')
     d=3
-    model = VAE(q,d)
+    model = VAE(q, d, n, q_n)
     model.load_state_dict(torch.load('VAE_SH3.pyt',map_location='cpu'))
     model.eval()
         
@@ -90,16 +70,25 @@ if __name__ =='__main__':
     np.random.seed(seed)
     real_nohot_list = toolkit.convert_nohot(v_traj_onehot, q_n)
     seed_list = np.random.randint(0, 2**32, 10)
-    pool = mp.Pool(mp.cpu_count())
+    #pool = mp.Pool(mp.cpu_count())
     
     print('Start generating sequences...')
     st_time = time.time()
-    packed = pool.map(run_gen, seed_list)
-    packed = [item for sublist in packed for item in sublist]
-    sample_list = [i[0] for i in packed]
-    z_list = [i[1] for i in packed]
-    # https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-list-of-lists
-    pool.close()
+    
+    np.random.seed(seed)
+    z_gen = np.random.normal(0., 1., (n_gen, d)) #generate normal distribution of random numbers
+    data = torch.FloatTensor(z_gen).to(device)
+    data = model.decode(data) # Use the decoding layer to generate new sequences.
+    v_gen = data.cpu().detach().numpy()
+    sample_list = []
+    z_list = []
+
+    for i in range(int(n_gen/10)):
+        for k in range(n_sample):
+            v_samp_nothot = toolkit.sample_seq(seed+k, q, n, q_n, i, v_gen)
+            sample_list.append(v_samp_nothot)
+            z_list.append(z_gen[i])
+            
     alp_new_seq = toolkit.convert_alphabet(np.array(sample_list), aaindex, q_n) 
     end_time = time.time()
     print("Elapsed time %.2f (s)" % (end_time - st_time))

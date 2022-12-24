@@ -23,6 +23,65 @@ if os.environ.get('DISPLAY','') == '':
 # https://discuss.pytorch.org/t/how-can-l-load-my-best-model-as-a-feature-extractor-evaluator/17254/5
 # grab outputs between the hidden layers
 
+def VAEtrain(model, epoch, batches_per_epoch, v_train, v_val):
+    
+    # optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0)
+    
+    # batching and training
+    ind = np.arange(v_train.shape[0])
+    for i in range(batches_per_epoch):
+        data = torch.FloatTensor(v_train[np.random.choice(ind, size=batch_size)]) # randomly sample training set
+        data = data.to(device)
+        optimizer.zero_grad()
+        pred, mu, logvar = model(data)
+        loss = model.loss(pred, data, mu, logvar) #loss(self, reconstruction, x, mu, logvar)
+        loss.backward()
+        optimizer.step() # optimize function...
+    
+    # training loss
+    data = torch.FloatTensor(v_train)
+    data = data.to(device)
+    pred, mu, logvar = model(data)
+    train_loss = model.loss(pred, data, mu, logvar)
+    train_loss = train_loss.cpu().detach().numpy() # network is trained on this loss, maximize P(X), what the network see
+    
+    diff = pred.cpu().detach().numpy() - v_train
+    train_loss_MSE = np.mean(diff**2) # mean square error per position, for human to see. Network does not know it.
+    
+    # validation loss
+    data = torch.FloatTensor(v_val)
+    data = data.to(device)
+    pred, mu, logvar = model(data)
+    val_loss = model.loss(pred, data, mu, logvar)
+    val_loss = val_loss.cpu().detach().numpy()
+    
+    diff = pred.cpu().detach().numpy() - v_val
+    val_loss_MSE = np.mean(diff**2)
+    
+    if (epoch % 10 == 0):
+        print('====> Epoch %d done! Train loss = %.2e, Val loss = %.2e, Train loss MSE = %.2e, Val loss MSE = %.2e' % (epoch,train_loss,val_loss,train_loss_MSE,val_loss_MSE))
+    
+    return train_loss, val_loss, train_loss_MSE, val_loss_MSE
+
+
+def VAEtest(model, v_test):
+    
+    data = torch.FloatTensor(v_test)
+    data = data.to(device)
+    pred, mu, logvar = model(data) # model is VAE?
+    
+    # ELBO test loss
+    test_loss = model.loss(pred, data, mu, logvar)
+    test_loss = test_loss.cpu().detach().numpy()
+    
+    # MSE test loss
+    diff = pred.cpu().detach().numpy() - v_test
+    test_loss_MSE = np.mean(diff**2)
+    
+    return pred, test_loss, test_loss_MSE
+
+
 activation = {} 
 def get_activation(name):
     def hook(model, input, output):
@@ -106,7 +165,7 @@ if __name__ =='__main__':
 
     batch_size = 40
     over_batch = 5
-    batches_per_epoch = np.int(over_batch*np.ceil((1.-val_frac/(1-test_frac))*v_train_val.shape[0]/batch_size))
+    batches_per_epoch = np.int32(over_batch*np.ceil((1.-val_frac/(1-test_frac))*v_train_val.shape[0]/batch_size))
     
     nb_epoch = options.nbepoch
     nPartition=options.npart
@@ -138,7 +197,7 @@ if __name__ =='__main__':
         for d in range(1,dMax+1): # iterating over different dimensionalities of latent space
             print ('k-fold partition %d/%d -- d = %d' % (partition+1, nPartition, d))
 
-            model = VAE(q,d).to(device)
+            model = VAE(q, d, n, q_n).to(device)
 
             loss_train = []
             loss_val = []
