@@ -9,6 +9,8 @@
 
 Vanilla VAE codes for https://www.biorxiv.org/content/10.1101/2022.12.21.521443v1
 
+InfoVAE codes: https://github.com/Ferg-Lab/Protein_design_mmdVAE_torch
+
 Protein design variational autoencoder (VAE) is an approach for designing new proteins from primary sequential structure and evolutionary constrains based on deep learning. Feeded by neural network with natural sequences (namely multiple sequence alignment, MSA), the VAE encodes the high-dimensional sequence data into low-dimensional latent space, then decodes the sample points from the latent space to construct new sequences.   
   
 This repository includes a complete pipeline from preprocessing the MSA data to pick up new VAE generated sequences. The tutorial file *VAE_SH3.ipynb* is distributed as Jupyter notebook; for details please see: https://jupyter.org/. 
