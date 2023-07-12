@@ -204,15 +204,21 @@ def Hamming_list(seq_list,ref_list):
     return [minHamming(i, ref_list) for i in seq_list] 
 
 @jit(nopython=True)
-def sample_seq(seed, q, n, q_n, i, v_gen):
+def sample_seq(seed, q, n, q_n, i, v_gen, method = 'multinomial'):
     v_samp = np.zeros(q)
     v_samp_nothot = np.zeros(n)
     for j in range(n):
         start = np.sum(q_n[:j])
         end = np.sum(q_n[:j+1])
-        np.random.seed(seed) # Change random seed in each iteration.
-        v_samp[start:end] = np.random.multinomial(1, v_gen[i,start:end]/np.sum(v_gen[i,start:end]))
-        # only throw dice once. Get the AA which was selected.
+        
+        if method == 'multinomial':
+            np.random.seed(seed) # Change random seed in each iteration.
+            v_samp[start:end] = np.random.multinomial(1, v_gen[i,start:end]/np.sum(v_gen[i,start:end]))
+            # only throw dice once. Get the AA which was selected.
+        elif method == 'argmax':
+            v_samp[start:end] = np.zeros_like(v_gen[i, start:end])  # create a zero array of the same shape
+            max_index = np.argmax(v_gen[i, start:end])  # find the index of the maximum value
+            v_samp[start:end][max_index] = 1  # set the max index to 1          
 
         v_samp_nothot[j] = np.nonzero(v_samp[start:end])[0][0]
     return v_samp_nothot
