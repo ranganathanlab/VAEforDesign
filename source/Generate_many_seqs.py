@@ -9,17 +9,12 @@ import pickle
 import multiprocessing as mp
 import time
 import shutil
-from itertools import repeat
 
 import toolkit
 from model import *
-
-from Bio import SeqIO
-from Bio import AlignIO
-    
     
 if __name__ =='__main__':
-    parser = argparse.ArgumentParser(description='Hint: In total ngen*nsamp new sequences are generated, default 1000. Then they are filtered according to thresholds of minimum Hamming distance.')
+    parser = argparse.ArgumentParser(description='In total ngen*nsamp new sequences are generated, default 1000.')
     
     parser.add_argument("-g", "--ngen", dest ="ngen", 
                         default=1000, type=int, 
@@ -27,6 +22,9 @@ if __name__ =='__main__':
     parser.add_argument("-s", "--nsamp", dest ="nsamp", 
                         default=10, type=int, 
                         help="times of throwing dice at each sampling point. Default 10")
+    parser.add_argument("-m", "--method", dest ="method", 
+                        default='multinomial', type=str,
+                        help="sampling method, argmax or multinomial. If argmax sample nsamp*ngen for each latent sample point.")
     parser.add_argument("-r", "--randseed", dest ="randseed", 
                         default=1000, type=int, help="Random seed. Default 1000.")
     parser.add_argument("-n", "--name", dest ="name", 
@@ -66,11 +64,10 @@ if __name__ =='__main__':
     seed = options.randseed
     n_gen = options.ngen
     n_sample = options.nsamp
+    method = options.method
     
     np.random.seed(seed)
     real_nohot_list = toolkit.convert_nohot(v_traj_onehot, q_n)
-    seed_list = np.random.randint(0, 2**32, 10)
-    #pool = mp.Pool(mp.cpu_count())
     
     print('Start generating sequences...')
     st_time = time.time()
@@ -83,11 +80,21 @@ if __name__ =='__main__':
     sample_list = []
     z_list = []
 
-    for i in range(int(n_gen/10)):
-        for k in range(n_sample):
-            v_samp_nothot = toolkit.sample_seq(seed+k, q, n, q_n, i, v_gen)
+    if method == 'multinomial':
+        for i in range(int(n_gen/10)): 
+            for k in range(n_sample):
+                v_samp_nothot = toolkit.sample_seq(seed+k, q, n, q_n, i, v_gen, method = method)
+                sample_list.append(v_samp_nothot)
+                z_list.append(z_gen[i])
+
+    elif method == 'argmax':
+        for i in range(n_gen):
+            v_samp_nothot = toolkit.sample_seq(seed+i, q, n, q_n, i, v_gen, method = method)
             sample_list.append(v_samp_nothot)
             z_list.append(z_gen[i])
+            
+    else:
+        raise ValueError("Invalid method, method must be argmax or multinomial")
             
     alp_new_seq = toolkit.convert_alphabet(np.array(sample_list), aaindex, q_n) 
     end_time = time.time()
@@ -103,6 +110,13 @@ if __name__ =='__main__':
     p_weight = pred_ref.cpu().detach().numpy()
     print('computing logP...')
     log_norm = toolkit.make_logP(new_potts, p_weight, q_n)
+
+    print('computing min Hamming distances to input MSA...')
+    int_new = [toolkit.aa2int(i,toolkit.plm_dict.dict_aa2int) for i in alp_new_seq]
+    int_msa = [toolkit.aa2int(i,toolkit.plm_dict.dict_aa2int) for i in parameters['seq']]
+    min_Ham = []
+    for i in int_new:
+        min_Ham.append(toolkit.minHamming(i, int_msa))
     
     if options.sca:
         print('Start computing SCA...')
@@ -132,7 +146,11 @@ if __name__ =='__main__':
     end_time = time.time()
     print("Elapsed time %.2f (s)" % (end_time - st_time))
     
-    np.savez(path + options.name + options.custom + 'gen_data.npz', seq = alp_new_seq, ham = 0, logP = log_norm, z_list = z_list)
+    np.savez(path + options.name + options.custom + 'gen_data.npz', 
+             seq = alp_new_seq, 
+             ham = min_Ham, 
+             logP = log_norm, 
+             z_list = z_list)
     
     end_all = time.time()
     print("\nTotal elapsed time %.2f (s)" % (end_all - start_all))
